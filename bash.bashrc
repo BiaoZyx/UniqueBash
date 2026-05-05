@@ -150,18 +150,56 @@ _collapse() {
 
 # Git 分支+状态
 _git_info() {
-	local b s r="" a="" u=""
-	b=$(git branch --show-current 2>/dev/null) || return
+    local b r="" s line
+    b=$(git branch --show-current 2>/dev/null) || return
 
-	s=$(git status --porcelain 2>/dev/null)
-	[[ -z "$s" ]] && r=" ○" || r=" ●"
+    # 一次命令获取所有信息
+    s=$(git status --porcelain=2 --branch 2>/dev/null)
 
-	a=$(git diff --cached --numstat 2>/dev/null | wc -l)
-	u=$(git diff --numstat 2>/dev/null | wc -l)
-	[[ "$a" -gt 0 ]] && r="$r +${a}"
-	[[ "$u" -gt 0 ]] && r="$r ~${u}"
+    # 解析分支信息
+    local ahead=0 behind=0 ab="$R"
+    local ab_line=$(echo "$s" | grep "^# branch\.ab")
+    if [[ -n "$ab_line" ]]; then
+        ahead=$(echo "$ab_line"  | cut -d' ' -f3 | tr -d '+')
+        behind=$(echo "$ab_line" | cut -d' ' -f4 | tr -d '-')
+    fi
 
-	echo -n " ${b}${r} "
+    # 统计文件
+    local staged=0 unstaged=0 untracked=0 conflicts=0
+    while IFS= read -r line; do
+        [[ "$line" == "# "* ]] && continue
+        case "$line" in
+            "1 "*)  staged=$((staged + 1))      ;;  # 暂存区
+            "2 "*)  unstaged=$((unstaged + 1))  ;;  # 工作区修改
+            "u "*)  conflicts=$((conflicts + 1));;  # 冲突（最重要）
+            "? "*)  untracked=$((untracked + 1));;  # 未跟踪
+        esac
+    done <<< "$(echo "$s" | grep -v '^#')"
+
+    # 构建状态字符串
+    if (( conflicts > 0 )); then
+        r=" ✦${conflicts}"          # 有冲突最优先
+    elif (( staged + unstaged + untracked == 0 )); then
+        r=" ○"                       # 干净
+    else
+        r=" ●"                       # 有修改
+        (( staged > 0 ))    && r="$r +${staged}"
+        (( unstaged > 0 ))  && r="$r ~${unstaged}"
+        (( untracked > 0 )) && r="$r …${untracked}"  # 未跟踪文件
+    fi
+
+    # 分支名 + 状态
+    local branch_info=" ${b}${r}"
+
+    # 远程同步状态
+    if (( ahead > 0 )); then
+        branch_info="$branch_info ↑${ahead}"
+    fi
+    if (( behind > 0 )); then
+        branch_info="$branch_info ↓${behind}"
+    fi
+
+    echo -n "$branch_info "
 }
 
 # 耗时格式化
