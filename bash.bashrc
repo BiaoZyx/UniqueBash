@@ -1,7 +1,7 @@
 #!/bin/bash
 # ~/.bashrc
-# Version     : 2.9
-# Update-time : 2026-5-3
+# Version     : 3.0
+# Update-time : 2026-5-4
 # Author      : BiaoZyx
 # Email       : BiaoZyx@outlook.com
 
@@ -100,23 +100,52 @@ BG_WHITE='\[\033[47m\]'
 
 # 路径折叠
 _collapse() {
-	local p="${PWD/#$HOME/~}"
-	[[ "$p" == "/" ]] && {
+	local pwd="$PWD"
+	local home="$HOME"
+	local size=${#home}
+
+	[[ -z "$pwd" ]] && return
+
+	if [[ "$pwd" == "/" ]]; then
 		echo "/"
 		return
-	}
-	[[ "$p" == "~" ]] && {
+	elif [[ "$pwd" == "$home" ]]; then
 		echo "~"
 		return
-	}
+	fi
+
+	# 替换 $HOME 为 ~
+	if [[ "$pwd" == "$home/"* ]]; then
+		pwd="~${pwd:$size}"
+	fi
+
+	# 分割路径
 	local IFS="/"
-	local a=($p)
-	local l=${#a[@]}
-	for ((i = 0; i < l - 1; i++)); do
-		[[ -n "${a[$i]}" ]] && a[$i]="${a[$i]:0:1}"
+	local elements=($pwd)
+	local length=${#elements[@]}
+	local start=0
+
+	# 如果路径以 / 开头，跳过第一个空元素
+	if [[ -z "${elements[0]}" ]]; then
+		start=1
+	fi
+
+	for ((i = start; i < length - 1; i++)); do
+		local elem="${elements[$i]}"
+		if [[ -n "$elem" ]]; then
+			if [[ "$elem" == .* ]]; then
+				# 隐藏文件夹（以 . 开头）显示前 2 个字符
+				elements[$i]="${elem:0:2}"
+			else
+				# 普通文件夹显示第 1 个字符
+				elements[$i]="${elem:0:1}"
+			fi
+		fi
 	done
+
+	# 重新组合路径
 	IFS="/"
-	echo "${a[*]}"
+	echo "${elements[*]}"
 }
 
 # Git 分支+状态
