@@ -212,9 +212,9 @@ _powerline_prompt() {
 				IFS='|'
 				echo "${__ps[*]}"
 			)
-			st_icon=" ${pipe_info}"
+			st_icon=" ✕${pipe_info}"
 		else
-			st_icon=" ${ec}"
+			st_icon=" ✕${ec}"
 		fi
 		st_bg="${BG_RED}"
 		st_fg="${W1}"
