@@ -1,9 +1,12 @@
 #!/bin/bash
 # ~/.bashrc
-# Version     : 3.0
-# Update-time : 2026-5-4
+# Version     : 3.1
+# Update-time : 2026-5-6
 # Author      : BiaoZyx
 # Email       : BiaoZyx@outlook.com
+#####################################
+# Commit      : Add a line to devide the prompts, and update the git mod. 
+
 
 # 加载全局配置
 if [ -f /etc/bashrc ]; then
@@ -45,7 +48,7 @@ export PATH=~/.npm-global/bin:$PATH
 
 # ----- 备忘录 -----
 if [ -f ~/文档/memo.xue ]; then # 自定义备忘录
-	memo=/home/xue/文档/memo.xue
+	memo=$HOME/文档/memo.xue
 
 fi
 
@@ -279,9 +282,13 @@ _powerline_prompt() {
 
 	# 段4: 耗时+状态图标 → 末端箭头
 	local s4="${st_bg}${st_fg}${st_icon} ${t} ${R}${st_arr_fg}"
+	
+	__last_time=$now
 
 	# 最终单行
-	PS1="\n${s1}${s2}${s3}${s4} ${R}"
+	#PS1="\[\n\]${s1}${s2}${s3}${s4} ${R}"
+
+	PS1="${R}\[\033[1;30m\]───${R}\n${s1}${s2}${s3}${s4} ${R}"
 }
 
 PROMPT_COMMAND+=(_powerline_prompt)
