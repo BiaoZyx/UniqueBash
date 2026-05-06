@@ -172,10 +172,12 @@ _git_info() {
     while IFS= read -r line; do
         [[ "$line" == "# "* ]] && continue
         case "$line" in
-            "1 "*)  staged=$((staged + 1))      ;;  # 暂存区
-            "2 "*)  unstaged=$((unstaged + 1))  ;;  # 工作区修改
-            "u "*)  conflicts=$((conflicts + 1));;  # 冲突（最重要）
-            "? "*)  untracked=$((untracked + 1));;  # 未跟踪
+            "1 "*)         staged=$((staged + 1))      ;;  # 暂存区
+            "2 "*)         unstaged=$((unstaged + 1))  ;;  # 工作区修改
+            " D"*)         unstaged=$((unstaged + 1))  ;;  # 工作区删除
+            " D"????*)     staged=$((staged + 1))      ;;  # 暂存区删除
+            "u "*)         conflicts=$((conflicts + 1));;  # 冲突
+            "? "*)         untracked=$((untracked + 1));;  # 未跟踪
         esac
     done <<< "$(echo "$s" | grep -v '^#')"
 
