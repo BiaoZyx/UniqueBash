@@ -53,10 +53,20 @@ if [ -f ~/文档/memo.xue ]; then # 自定义备忘录
 fi
 
 ## 别名
-alias ls="ls --color -F"   # 自定义`ls`，可自行删减
-alias l="ls -lah"          # 自定义`ls`，可自行删减
-alias ll="ls -lh"          # 自定义`ls`，可自行删减
-alias ip='ip --color=auto' # `ip a`的彩色，很有必要
+if command -v eza &> /dev/null; then
+    export EZA_ICONS_AUTO=1
+    alias ls='eza'
+else
+    alias ls='ls --color=auto'
+fi
+alias ll='ls -l'
+alias la='ls -A'
+alias l='ls -lah'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias grep='grep --color=auto'
+alias ip='ip --color=auto' 
 
 if [[ -z $memo ]]; then
 	alias memo="echo 备忘录路径为空！请手动添加到~/.bashrc！"
@@ -67,10 +77,6 @@ else
 		alias memo="cat $memo"
 	fi
 fi
-
-alias irssi-rizon="irssi -c irc.rizon.net" # 我的`irssi`快捷配置
-
-alias d--="g++ -x cpp"
 
 # `thefuck`配置，安装才加载
 if [[ -e /usr/bin/thefuck ]]; then
@@ -223,7 +229,8 @@ _fmt_t() {
 
 # 计时
 __ts=""
-trap '__ps=("${PIPESTATUS[@]}"); [[ -z "$__ts" ]] && __ts=$(date +%s%N)' DEBUG
+#trap '__ps=("${PIPESTATUS[@]}"); [[ -z "$__ts" ]] && __ts=$(date +%s%N)' DEBUG
+trap '__ps=("${PIPESTATUS[@]}"); __ts=$(date +%s%N)' DEBUG
 
 # 根用户检测
 __is_root() { [[ $(id -u) -eq 0 ]] && echo 1; }
