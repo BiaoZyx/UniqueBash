@@ -207,7 +207,7 @@ _powerline_prompt() {
         local s4="${st_bg}${st_fg}${st_icon}${t} ${R}${st_arr_fg}"
     fi
 
-    PS1="${R}\[\033[1;30m\]───${R}\n${s1}${s2}${s3}${s4}${R}"
+    PS1="${R}\[\033[1;30m\]───${R}\n${s1}${s2}${s3}${s4}${R} "
 }
 
 PROMPT_COMMAND=(_powerline_prompt)

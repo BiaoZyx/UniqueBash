@@ -5,17 +5,17 @@
 # Author      : BiaoZyx
 # Email       : BiaoZyx@outlook.com
 #####################################
-# Commit      : Add a line to devide the prompts, and update the git mod. 
+# Commit      : Add a line to devide the prompts, and update the git mod.
 
 
 # 加载全局配置
 if [ -f /etc/bashrc ]; then
-	. /etc/bashrc
+  . /etc/bashrc
 fi
 
 # 用户环境变量
 if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
-	PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+  PATH="$HOME/.local/bin:$HOME/bin:$PATH"
 fi
 export PATH
 
@@ -24,21 +24,21 @@ export PATH
 
 # User specific aliases and functions
 if [ -d ~/.bashrc.d ]; then
-	for rc in ~/.bashrc.d/*; do
-		if [ -f "$rc" ]; then
-			. "$rc"
-		fi
-	done
+  for rc in ~/.bashrc.d/*; do
+    if [ -f "$rc" ]; then
+      . "$rc"
+    fi
+  done
 fi
 unset rc
 
 # 在交互shell启用bash自动补全，建议安装`bash-completion`并启用
 if ! shopt -oq posix; then
-	if [ -f /usr/share/bash-completion/bash_completion ]; then
-		. /usr/share/bash-completion/bash_completion
-	elif [ -f /etc/bash_completion ]; then
-		. /etc/bash_completion
-	fi
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
 fi
 ############################## 自定义 ##############################
 ## 变量
@@ -47,9 +47,8 @@ fi
 export PATH=~/.npm-global/bin:$PATH
 
 # ----- 备忘录 -----
-if [ -f ~/文档/memo.xue ]; then # 自定义备忘录
-	memo=$HOME/文档/memo.xue
-
+if [ -f $HOME/.memo ]; then # 自定义备忘录
+  memo=$HOME/.memo
 fi
 
 ## 别名
@@ -65,22 +64,24 @@ alias l='ls -lah'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias ......='cd ../../../../..'
 alias grep='grep --color=auto'
-alias ip='ip --color=auto' 
+alias ip='ip --color=auto'
 
 if [[ -z $memo ]]; then
-	alias memo="echo 备忘录路径为空！请手动添加到~/.bashrc！"
+  alias memo="echo 备忘录路径为空！请手动添加到~/.bashrc！"
 else
-	if command -v lolcat &>/dev/null; then
-		alias memo="lolcat $memo"
-	else
-		alias memo="cat $memo"
-	fi
+  if command -v lolcat &>/dev/null; then
+    alias memo="lolcat $memo"
+  else
+    alias memo="cat $memo"
+  fi
 fi
 
 # `thefuck`配置，安装才加载
 if [[ -e /usr/bin/thefuck ]]; then
-	eval $(thefuck --alias f)
+  eval $(thefuck --alias f)
 fi
 ####################################################################
 # ============ 现代 Powerline 风格提示符 ============
@@ -109,52 +110,52 @@ BG_WHITE='\[\033[47m\]'
 
 # 路径折叠
 _collapse() {
-	local pwd="$PWD"
-	local home="$HOME"
-	local size=${#home}
+  local pwd="$PWD"
+  local home="$HOME"
+  local size=${#home}
 
-	[[ -z "$pwd" ]] && return
+  [[ -z "$pwd" ]] && return
 
-	if [[ "$pwd" == "/" ]]; then
-		echo "/"
-		return
-	elif [[ "$pwd" == "$home" ]]; then
-		echo "~"
-		return
-	fi
+  if [[ "$pwd" == "/" ]]; then
+    echo "/"
+    return
+  elif [[ "$pwd" == "$home" ]]; then
+    echo "~"
+    return
+  fi
 
-	# 替换 $HOME 为 ~
-	if [[ "$pwd" == "$home/"* ]]; then
-		pwd="~${pwd:$size}"
-	fi
+  # 替换 $HOME 为 ~
+  if [[ "$pwd" == "$home/"* ]]; then
+    pwd="~${pwd:$size}"
+  fi
 
-	# 分割路径
-	local IFS="/"
-	local elements=($pwd)
-	local length=${#elements[@]}
-	local start=0
+  # 分割路径
+  local IFS="/"
+  local elements=($pwd)
+  local length=${#elements[@]}
+  local start=0
 
-	# 如果路径以 / 开头，跳过第一个空元素
-	if [[ -z "${elements[0]}" ]]; then
-		start=1
-	fi
+  # 如果路径以 / 开头，跳过第一个空元素
+  if [[ -z "${elements[0]}" ]]; then
+    start=1
+  fi
 
-	for ((i = start; i < length - 1; i++)); do
-		local elem="${elements[$i]}"
-		if [[ -n "$elem" ]]; then
-			if [[ "$elem" == .* ]]; then
-				# 隐藏文件夹（以 . 开头）显示前 2 个字符
-				elements[$i]="${elem:0:2}"
-			else
-				# 普通文件夹显示第 1 个字符
-				elements[$i]="${elem:0:1}"
-			fi
-		fi
-	done
+  for ((i = start; i < length - 1; i++)); do
+    local elem="${elements[$i]}"
+    if [[ -n "$elem" ]]; then
+      if [[ "$elem" == .* ]]; then
+        # 隐藏文件夹（以 . 开头）显示前 2 个字符
+        elements[$i]="${elem:0:2}"
+      else
+        # 普通文件夹显示第 1 个字符
+        elements[$i]="${elem:0:1}"
+      fi
+    fi
+  done
 
-	# 重新组合路径
-	IFS="/"
-	echo "${elements[*]}"
+  # 重新组合路径
+  IFS="/"
+  echo "${elements[*]}"
 }
 
 # Git 分支+状态
@@ -215,16 +216,16 @@ _git_info() {
 
 # 耗时格式化
 _fmt_t() {
-	local ms=$((($1 + 500000) / 1000000))
-	if ((ms < 1000)); then
-		printf "%dms" $ms
-	elif ((ms < 60000)); then
-		printf "%d.%01ds" $((ms / 1000)) $(((ms % 1000) / 100))
-	elif ((ms < 3600000)); then
-		printf "%dm%02ds" $((ms / 60000)) $(((ms % 60000) / 1000))
-	else
-		printf "%dh%02dm" $((ms / 3600000)) $(((ms % 3600000) / 60000))
-	fi
+  local ms=$((($1 + 500000) / 1000000))
+  if ((ms < 1000)); then
+    printf "%dms" $ms
+  elif ((ms < 60000)); then
+    printf "%d.%01ds" $((ms / 1000)) $(((ms % 1000) / 100))
+  elif ((ms < 3600000)); then
+    printf "%dm%02ds" $((ms / 60000)) $(((ms % 60000) / 1000))
+  else
+    printf "%dh%02dm" $((ms / 3600000)) $(((ms % 3600000) / 60000))
+  fi
 }
 
 # 计时
@@ -237,86 +238,86 @@ __is_root() { [[ $(id -u) -eq 0 ]] && echo 1; }
 
 # ====== 核心：构建 Powerline 提示符 ======
 _powerline_prompt() {
-	local ec=$?
-	local now=$(date +%s%N)
+  local ec=$?
+  local now=$(date +%s%N)
 
-	# 耗时
-	local t=""
-	if [[ -n "$__ts" ]]; then
-		t=$(_fmt_t $((now - __ts)))
-		__ts=""
-	fi
+  # 耗时
+  local t=""
+  if [[ -n "$__ts" ]]; then
+    t=$(_fmt_t $((now - __ts)))
+    __ts=""
+  fi
 
-	# Git
-	local git="$(_git_info)"
+  # Git
+  local git="$(_git_info)"
 
-	# 状态图标（支持管道状态）
-	local st_icon=""
-	local st_bg="${BG_GREEN}"
-	local st_fg="${BL}"
-	local st_arr_fg="${G1}"
-	if ((ec != 0)); then
-		# 检查管道状态
-		if [[ -n "${__ps[*]}" && ${#__ps[@]} -gt 1 ]]; then
-			local pipe_info=$(
-				IFS='|'
-				echo "${__ps[*]}"
-			)
-			st_icon=" ✕${pipe_info}"
-		else
-			st_icon=" ✕${ec}"
-		fi
-		st_bg="${BG_RED}"
-		st_fg="${W1}"
-		st_arr_fg="${R1}"
-	fi
+  # 状态图标（支持管道状态）
+  local st_icon=""
+  local st_bg="${BG_GREEN}"
+  local st_fg="${BL}"
+  local st_arr_fg="${G1}"
+  if ((ec != 0)); then
+    # 检查管道状态
+    if [[ -n "${__ps[*]}" && ${#__ps[@]} -gt 1 ]]; then
+      local pipe_info=$(
+        IFS='|'
+        echo "${__ps[*]}"
+      )
+      st_icon=" ✕${pipe_info}"
+    else
+      st_icon=" ✕${ec}"
+    fi
+    st_bg="${BG_RED}"
+    st_fg="${W1}"
+    st_arr_fg="${R1}"
+  fi
 
-	# === 拼装 Powerline 全箭头 ===
-	# 段1: 用户@主机  (青色底+黑字) → 箭头进入蓝色
-	local s1="${BG_CYAN}${BL} \u@\h ${R}${C1}${BG_BLUE}"
+  # === 拼装 Powerline 全箭头 ===
+  # 段1: 用户@主机  (青色底+黑字) → 箭头进入蓝色
+  local s1="${BG_CYAN}${BL} \u@\h ${R}${C1}${BG_BLUE}"
 
-	# 段2: 路径 (蓝色底+白字)
-	local s2="${BG_BLUE}${W1} $(_collapse) ${R}"
+  # 段2: 路径 (蓝色底+白字)
+  local s2="${BG_BLUE}${W1} $(_collapse) ${R}"
 
-	# 段3: Git部分 / 直接跳到耗时
-	local s3=""
-	if [[ -n "$git" ]]; then
-		# 有git：蓝色箭头进入黄色 → git文字 → 黄色箭头进入状态色
-		s2+="${BG_BLACK}${B1}${BG_YELLOW}"
-		s3="${BG_YELLOW}${BL}${git}${R}${BG_BLACK}${Y1}${st_bg}"
-	else
-		# 没git：蓝色箭头直接进入状态色
-		s3="${BG_BLACK}${B1}${st_bg}"
-	fi
+  # 段3: Git部分 / 直接跳到耗时
+  local s3=""
+  if [[ -n "$git" ]]; then
+    # 有git：蓝色箭头进入黄色 → git文字 → 黄色箭头进入状态色
+    s2+="${BG_BLACK}${B1}${BG_YELLOW}"
+    s3="${BG_YELLOW}${BL}${git}${R}${BG_BLACK}${Y1}${st_bg}"
+  else
+    # 没git：蓝色箭头直接进入状态色
+    s3="${BG_BLACK}${B1}${st_bg}"
+  fi
 
-	# 段4: 耗时+状态图标 → 末端箭头
-	local s4="${st_bg}${st_fg}${st_icon} ${t} ${R}${st_arr_fg}"
-	
-	__last_time=$now
+  # 段4: 耗时+状态图标 → 末端箭头
+  local s4="${st_bg}${st_fg}${st_icon} ${t} ${R}${st_arr_fg}"
 
-	# 最终单行
-	#PS1="\[\n\]${s1}${s2}${s3}${s4} ${R}"
+  __last_time=$now
 
-	PS1="${R}\[\033[1;30m\]───${R}\n${s1}${s2}${s3}${s4} ${R}"
+  # 最终单行
+  #PS1="\[\n\]${s1}${s2}${s3}${s4} ${R}"
+
+  PS1="${R}\[\033[1;30m\]───${R}\n${s1}${s2}${s3}${s4} ${R}"
 }
 
 PROMPT_COMMAND+=(_powerline_prompt)
 
 # =========================== 欢迎界面 ==============================
 if [[ -e /usr/bin/figlet ]]; then
-	figlet_lock_file="/tmp/figlet_lock_$$"
-	# 使用 $$ 作为文件名的一部分，确保每个进程都有自己的锁文件
-	# 检查锁文件是否存在
-	if [ ! -f "$figlet_lock_file" ]; then
-		# 创建锁文件并执行 figlet
-		touch "$figlet_lock_file"
-		echo "         _   _ _
+  figlet_lock_file="/tmp/figlet_lock_$$"
+  # 使用 $$ 作为文件名的一部分，确保每个进程都有自己的锁文件
+  # 检查锁文件是否存在
+  if [ ! -f "$figlet_lock_file" ]; then
+    # 创建锁文件并执行 figlet
+    touch "$figlet_lock_file"
+    echo "         _   _ _
 /\\_/\\   | | | (_)
 (o.o)   | |_| | |_
 > ^ < . |  _  | ( )
 /   \\ . |_| |_|_|/
 "
-		figlet "$USER! "
-	fi
+    figlet "$USER! "
+  fi
 fi
 trap 'rm -f "$figlet_lock_file"' EXIT TERM # 用钩子，等退出删除锁文件
