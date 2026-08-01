@@ -7,8 +7,8 @@
 # \____/_/ /_/_/\__, /\__,_/\___/_____/\__,_/____/_/ /_/
 #                 /_/
 # =======================================================
-# Version      : 3.2
-# Updated-time : 2026-7-31
+# Version      : 3.3
+# Updated-time : 2026-8-1
 # Auther       : BiaoZyx
 # Email        : BiaoZyx@outlook.com
 # =======================================================
@@ -22,13 +22,32 @@
 # ------------------------------
 # Core Settings
 # ------------------------------
+
+# Setup for interactive shell
+if [[ $- == *i* ]]; then
+  # History Settings
+  shopt -s histappend
+  HISTFILE="$HOME/.bash_history"
+  HISTCONTROL=ignoreboth
+  HISTIGNORE='&:[ ]*'
+  HISTSIZE=10000
+  HISTFILESIZE=10000
+
+  #PROMPT_COMMAND='history -a; history -n; _build_prompt'
+  PROMPT_COMMAND='_saved_ec=$?; _saved_ps=("${PIPESTATUS[@]}"); history -a; history -n; _build_prompt'
+  bind -x '"\C-p": __prompt_toggle_style'
+
+  # Welcome message
+  printf "Welcome to Bash, \033[0;32m%s\033[0m! \n" "$USER"
+fi
+
 # Load Global Configs
 if [ -f /etc/bashrc ]; then
   . /etc/bashrc
 fi
 
 # User's Configs
-if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
   PATH="$HOME/.local/bin:$HOME/bin:$PATH"
 fi
 export PATH
@@ -64,14 +83,14 @@ fi
 R='\[\033[0m\]'     # Reset
 BR='\[\033[30m\]'   # Black - Regular
 BB='\[\033[1;30m\]' # Black - Bold
-if false; then      # - Unused colors -
-R1='\[\033[1;31m\]' # Red
-G1='\[\033[1;32m\]' # Green
-Y1='\[\033[1;33m\]' # Yellow
-B1='\[\033[1;34m\]' # Blue
-M1='\[\033[1;35m\]' # Magenta
-C1='\[\033[1;36m\]' # Cyan
-fi
+
+# Unused Colors Definitions
+#R1='\[\033[1;31m\]' # Red
+#G1='\[\033[1;32m\]' # Green
+#Y1='\[\033[1;33m\]' # Yellow
+#B1='\[\033[1;34m\]' # Blue
+#M1='\[\033[1;35m\]' # Magenta
+#C1='\[\033[1;36m\]' # Cyan
 
 W1='\[\033[1;37m\]' # White
 
@@ -92,6 +111,15 @@ BG_BLUE='\[\033[44m\]'
 BG_MAGENTA='\[\033[45m\]'
 BG_CYAN='\[\033[46m\]'
 BG_WHITE='\[\033[47m\]'
+
+# Prompt style and git cache settings
+GIT_PROMPT_CACHE_TTL=3
+PROMPT_STYLE=1
+PROMPT_STYLE_COUNT=2
+PROMPT_ASCII_CHAR='>'
+PROMPT_STYLE_NAMES=(Powerline ASCII)
+__git_info_cache=''
+__git_info_cache_time=0
 
 # PWD Collapse Function
 _collapse() {
@@ -145,32 +173,31 @@ _collapse() {
 
 # Git Branch and Status Function
 _git_info() {
-    # 性能优化：
-    # 1. 检查是否在 Git 仓库内（避免执行 git status 失败）
-    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    local now
+    now=$(date +%s)
+    if [[ -n "$__git_info_cache_time" && $((now - __git_info_cache_time)) -lt GIT_PROMPT_CACHE_TTL ]]; then
+        printf '%s' "$__git_info_cache"
         return
     fi
 
-    # 2. 大型仓库跳过（对象数 > 50000）
-    local git_dir=$(git rev-parse --git-dir 2>/dev/null)
-    if [[ -n "$git_dir" && -d "$git_dir/objects" ]]; then
-        local obj_count=$(find "$git_dir/objects" -type f 2>/dev/null | wc -l)
-        if (( obj_count > 50000 )); then
-            return
-        fi
+    # 1. 仅在 Git 仓库中计算信息，避免无谓开销。
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        __git_info_cache=''
+        __git_info_cache_time=$now
+        return
     fi
 
     local b r="" s line
     b=$(git branch --show-current 2>/dev/null) || return
 
-    # Get all information in one command
-    s=$(git status --porcelain=2 --branch 2>/dev/null)
+    # 2. 使用 GIT_OPTIONAL_LOCKS=0 降低 git status 的锁开销。
+    s=$(GIT_OPTIONAL_LOCKS=0 git status --porcelain=2 --branch --untracked-files=normal 2>/dev/null) || return
 
     # Parse branch information
     local ahead=0 behind=0 ab="$R"
     local ab_line=$(echo "$s" | grep "^# branch\.ab")
     if [[ -n "$ab_line" ]]; then
-        ahead=$(echo "$ab_line"  | cut -d' ' -f3 | tr -d '+')
+        ahead=$(echo "$ab_line" | cut -d' ' -f3 | tr -d '+')
         behind=$(echo "$ab_line" | cut -d' ' -f4 | tr -d '-')
     fi
 
@@ -211,25 +238,27 @@ _git_info() {
         branch_info="$branch_info ↓${behind}"
     fi
 
-    echo -n "$branch_info "
-}
+    __git_info_cache="$branch_info"
+    __git_info_cache_time=$now
 
-# Check if the user is root
-__is_root() { [[ $(id -u) -eq 0 ]] && echo 1; }
+    printf '%s' "$branch_info "
+}
 
 # ====== Core: Build Powerline Prompt ======
 _powerline_prompt() {
-  # 立即保存上一个命令的退出码和管道状态（快照）
-  local ec=$?
-  local pstatus=("${PIPESTATUS[@]}")   # 数组快照
-  local now=$(date +%s)
-
-  # 计算耗时
-  local t=""
-  if [[ -n "$__ts" ]]; then
-    t=$(_fmt_t $((now - __ts)))
-    __ts=""
+  # 使用传入的退出码和管道状态；若没有传入，则回退到当前上下文的值
+  local ec="${1:-${_saved_ec:-$?}}"
+  local pstatus=()
+  if [[ $# -gt 1 ]]; then
+    shift
+    pstatus=("$@")
+  else
+    pstatus=("${_saved_ps[@]}")
+    if [[ ${#pstatus[@]} -eq 0 ]]; then
+      pstatus=("${PIPESTATUS[@]}")
+    fi
   fi
+  local now=$(date +%s)
 
   local git="$(_git_info)"
 
@@ -272,9 +301,82 @@ _powerline_prompt() {
   PS1="${R}\[\033[1;30m\]───${R}\n${s1}${s2}${s3}${s4} ${R}"
 }
 
-PROMPT_COMMAND+=(_powerline_prompt)
+__prompt_set_powerline() {
+  PROMPT_STYLE=1
+  PROMPT_ASCII_CHAR='>'
+}
 
-# ------------------------------
-# Welcome Message
-# ------------------------------
-printf "Welcome to Bash, \033[0;32m%s\033[0m! \n" "$USER"
+__prompt_set_ascii() {
+  PROMPT_STYLE=2
+  PROMPT_ASCII_CHAR='>'
+}
+
+__prompt_toggle_style() {
+  if [[ $PROMPT_STYLE -eq 1 ]]; then
+    PROMPT_STYLE=2
+  else
+    PROMPT_STYLE=1
+  fi
+  # 重建 PS1
+  _build_prompt
+}
+
+_build_prompt() {
+  # 从全局变量获取保存的退出码
+  local ec="${_saved_ec:-0}"
+  local pstatus=()
+  if [[ ${#_saved_ps[@]} -gt 0 ]]; then
+    pstatus=("${_saved_ps[@]}")
+  else
+    pstatus=("${PIPESTATUS[@]}")
+  fi
+
+  case "$PROMPT_STYLE" in
+    1)
+      _powerline_prompt "${_saved_ec}" "${_saved_ps[@]}"
+      ;;
+    2)
+      # === 带 8 色的 ASCII 风格 ===
+      local git="$(_git_info)"
+      local path="$(_collapse)"
+      local git_part=""
+
+      if [[ -n "$git" ]]; then
+        local clean_git="${git///}"
+        clean_git="${clean_git//○/-}"
+        clean_git="${clean_git//●/*}"
+        clean_git="${clean_git//✦/!}"
+        clean_git="${clean_git//↑/[ahead]}"
+        clean_git="${clean_git//↓/[behind]}"
+        clean_git="${clean_git//+/ +}"
+        clean_git="${clean_git//~/ ~}"
+        clean_git="${clean_git//…/ .}"
+        clean_git="$(echo "$clean_git" | tr -s ' ')"
+        clean_git="$(echo "$clean_git" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+        git_part=" (${dY1}${clean_git}${R})"
+      fi
+
+      # 命令退出码和管道状态（保留你之前的错误提示）
+      local ec=$_saved_ec
+      local pstatus=("${_saved_ps[@]}")
+      local st=""
+      if ((ec != 0)); then
+        if [[ ${#pstatus[@]} -gt 1 ]]; then
+          local pipe_info=$(IFS='|'; echo "${pstatus[*]}")
+          st=" ${dR1}[✕${pipe_info}]${R}"
+        else
+          st=" ${dR1}[${ec}]${R}"
+        fi
+      fi
+
+      # 根据命令执行结果决定 `>` 的颜色
+      local prompt_color="${dG1}"
+      if (( ec != 0 )); then
+        prompt_color="${dR1}"
+      fi
+
+      # 构建提示符：用户名、主机、路径、Git、错误状态，最后是带颜色的 `>`
+      PS1="\n${dC1}\u${R}@${dM1}\h${R}:${dB1}${path}${R}${git_part}${st}\n${prompt_color}> ${R}"
+      ;;
+  esac
+}

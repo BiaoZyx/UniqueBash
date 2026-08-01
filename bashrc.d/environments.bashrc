@@ -6,4 +6,6 @@
 #                     (~/.bashrc.d/environments.bashrc)
 # =====================================================
 
-export PATH=~/.npm-global/bin:$PATH
+# Path Settings, you can add your own path settings here,
+# but please do not modify the main.bashrc file directly.
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:$PATH"
