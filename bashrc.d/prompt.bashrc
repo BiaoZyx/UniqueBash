@@ -9,8 +9,8 @@
 
 # If using tty, set prompt style to 1, else set to 2
 if [[ "$(tty 2>/dev/null)" == *tty* ]]; then
-    PROMPT_STYLE=1
-else
     PROMPT_STYLE=2
+else
+    PROMPT_STYLE=1
 fi
 
