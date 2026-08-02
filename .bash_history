@@ -73,3 +73,18 @@ exit
 false
 exit
 exit
+l
+exit
+whoami
+clear
+sudo 
+clear
+exit
+echo $PWD
+echo $pwd
+exit
+pwd
+_collapse 
+exit
+l
+exit

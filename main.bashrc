@@ -7,8 +7,8 @@
 # \____/_/ /_/_/\__, /\__,_/\___/_____/\__,_/____/_/ /_/
 #                 /_/
 # =======================================================
-# Version      : 3.3
-# Updated-time : 2026-8-1
+# Version      : 3.4
+# Updated-time : 2026-8-2
 # Auther       : BiaoZyx
 # Email        : BiaoZyx@outlook.com
 # =======================================================
@@ -114,37 +114,37 @@ BG_WHITE='\[\033[47m\]'
 
 # Prompt style and git cache settings
 GIT_PROMPT_CACHE_TTL=3
-PROMPT_STYLE=1
+#PROMPT_STYLE=1
 PROMPT_STYLE_COUNT=2
-PROMPT_ASCII_CHAR='>'
 PROMPT_STYLE_NAMES=(Powerline ASCII)
 __git_info_cache=''
 __git_info_cache_time=0
 
 # PWD Collapse Function
 _collapse() {
-  local pwd="$PWD"
-  local home="$HOME"
-  local size=${#home}
+  local home_dir
+  home_dir=$(cd "$HOME" 2>/dev/null && pwd) || home_dir="$HOME"
+  local size=${#home_dir}
+  local path="$PWD"
 
-  [[ -z "$pwd" ]] && return
+  [[ -z "$path" ]] && return
 
-  if [[ "$pwd" == "/" ]]; then
+  if [[ "$path" == "/" ]]; then
     echo "/"
     return
-  elif [[ "$pwd" == "$home" ]]; then
+  elif [[ "$path" == "$home_dir" ]]; then
     echo "~"
     return
   fi
 
-  # Replace $HOME with ~
-  if [[ "$pwd" == "$home/"* ]]; then
-    pwd="~${pwd:$size}"
+  # Replace real home with ~
+  if [[ "$path" == "$home_dir/"* ]]; then
+    path="~${path:$size}"
   fi
 
   # Split the path into elements
   local IFS="/"
-  local elements=($pwd)
+  local elements=($path)
   local length=${#elements[@]}
   local start=0
 
@@ -303,12 +303,10 @@ _powerline_prompt() {
 
 __prompt_set_powerline() {
   PROMPT_STYLE=1
-  PROMPT_ASCII_CHAR='>'
 }
 
 __prompt_set_ascii() {
   PROMPT_STYLE=2
-  PROMPT_ASCII_CHAR='>'
 }
 
 __prompt_toggle_style() {
@@ -319,6 +317,13 @@ __prompt_toggle_style() {
   fi
   # 重建 PS1
   _build_prompt
+
+  # 让 readline 立即重绘当前行
+  if [[ -n "$READLINE_LINE" ]]; then
+    printf '\r\e[K'
+    READLINE_LINE="$READLINE_LINE"
+    READLINE_POINT=${READLINE_POINT:-${#READLINE_LINE}}
+  fi
 }
 
 _build_prompt() {
