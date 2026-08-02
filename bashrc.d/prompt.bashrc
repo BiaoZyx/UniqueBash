@@ -14,5 +14,3 @@ else
     PROMPT_STYLE=2
 fi
 
-# Cover it
-PROMPT_STYLE=1
