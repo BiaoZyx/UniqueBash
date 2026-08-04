@@ -7,8 +7,8 @@
 # \____/_/ /_/_/\__, /\__,_/\___/_____/\__,_/____/_/ /_/
 #                 /_/
 # =======================================================
-# Version      : 3.3
-# Updated-time : 2026-8-1
+# Version      : 3.4
+# Updated-time : 2026-8-4
 # Auther       : BiaoZyx
 # Email        : BiaoZyx@outlook.com
 # =======================================================
@@ -25,20 +25,7 @@
 
 # Setup for interactive shell
 if [[ $- == *i* ]]; then
-  # History Settings
-  shopt -s histappend
-  HISTFILE="$HOME/.bash_history"
-  HISTCONTROL=ignoreboth
-  HISTIGNORE='&:[ ]*'
-  HISTSIZE=10000
-  HISTFILESIZE=10000
-
-  #PROMPT_COMMAND='history -a; history -n; _build_prompt'
-  PROMPT_COMMAND='_saved_ec=$?; _saved_ps=("${PIPESTATUS[@]}"); history -a; history -n; _build_prompt'
-  bind -x '"\C-p": __prompt_toggle_style'
-
-  # Welcome message
-  printf "Welcome to Bash, \033[0;32m%s\033[0m! \n" "$USER"
+  . $HOME/.bashrc.d/interactive.startup
 fi
 
 # Load Global Configs
@@ -57,7 +44,7 @@ export PATH
 
 # User specific aliases and functions
 if [ -d ~/.bashrc.d ]; then
-  for rc in ~/.bashrc.d/*; do
+  for rc in ~/.bashrc.d/*.bashrc; do
     if [ -f "$rc" ]; then
       . "$rc"
     fi
@@ -180,7 +167,7 @@ _git_info() {
         return
     fi
 
-    # 1. 仅在 Git 仓库中计算信息，避免无谓开销。
+    # 1. 仅在 Git 仓库中计算信息，避免无谓开销
     if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         __git_info_cache=''
         __git_info_cache_time=$now
@@ -190,7 +177,7 @@ _git_info() {
     local b r="" s line
     b=$(git branch --show-current 2>/dev/null) || return
 
-    # 2. 使用 GIT_OPTIONAL_LOCKS=0 降低 git status 的锁开销。
+    # 2. 使用 GIT_OPTIONAL_LOCKS=0 降低 git status 的锁开销
     s=$(GIT_OPTIONAL_LOCKS=0 git status --porcelain=2 --branch --untracked-files=normal 2>/dev/null) || return
 
     # Parse branch information

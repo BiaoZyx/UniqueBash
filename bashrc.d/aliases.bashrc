@@ -36,10 +36,10 @@ alias grep='grep --color=auto'
 alias ip='ip --color=auto'
 
 # Safety aliases (confirm before overwrite/delete)
-alias cp='cp -i'
-alias mv='mv -i'
+#alias cp='cp -i'
+#alias mv='mv -i'
 # rm uses -i in Bash; if you ever use ash, it would need -I, but this is Bash-specific
-alias rm='rm -i'
+#alias rm='rm -i'
 
 # Clear screen shortcut
 alias cls='clear'
