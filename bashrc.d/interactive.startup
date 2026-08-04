@@ -8,7 +8,7 @@
 
 # Shopts
 shopt -s extglob    # 反向通配，如 rm -rf !(*.txt) 删除除 .txt 外的所有文件；ls *.!(sh|py) ：列出所有不是 .sh 或 .py 结尾的文件
-shopt -s autocd cdspell dirspell checkwinsize  # 输入目录名进入，自动修正拼写错误的目录名，自动切换到目录，检查窗口大小变化
+shopt -s autocd cdspell dirspell #checkwinsize  # 输入目录名进入，自动修正拼写错误的目录名，自动切换到目录，检查窗口大小变化
 
 # History Settings
 shopt -s histappend

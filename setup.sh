@@ -40,7 +40,7 @@ UniqueBash 安装脚本
 默认行为:
   自动备份现有的 ~/.bashrc 到 ~/.bashrc.bak.YYYYMMDD_HHMMSS
   然后将 main.bashrc 软链接到 ~/.bashrc
-  并确保 ~/.bashrc.d 链接到仓库中的 bashrc.d/ 目录
+  并确保仓库中的 bashrc.d 移动到 ~/.bashrc.d 并备份 ~/.bashrc.d 到 ~/.bashrc.d.bak.YYYYMMDD_HHMMSS/ 
 
 示例:
   ./setup.sh          # 正常安装
@@ -112,8 +112,8 @@ if [[ -d "$SCRIPT_DIR/bashrc.d" ]]; then
         mv "$HOME/.bashrc.d" "$HOME/.bashrc.d.bak.$(date +%Y%m%d_%H%M%S)"
         print_warn "已备份原有的 ~/.bashrc.d"
     fi
-    ln -s "$SCRIPT_DIR/bashrc.d" "$HOME/.bashrc.d"
-    print_success "已链接 ~/.bashrc.d -> bashrc.d"
+    cp -r "$SCRIPT_DIR/bashrc.d" "$HOME/.bashrc.d"
+    print_success "已复制 bashrc.d -> ~/.bashrc.d"
 else
     print_warn "bashrc.d 不存在，跳过模块目录链接。"
 fi

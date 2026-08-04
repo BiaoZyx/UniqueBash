@@ -9,7 +9,7 @@
 # but please do not modify the main.bashrc file directly.
 export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$HOME/bin:$PATH"
 
-export EDITOR='vim'  # Change it to your favorite
+#export EDITOR='vim'  # Change it to your favorite
 export PAGER='less'
 export MANPAGER='less -R'
 export LESS='-R'     # Colorful less
