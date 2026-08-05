@@ -109,53 +109,57 @@ __git_info_cache_time=0
 
 # PWD Collapse Function
 _collapse() {
-  local home_dir
-  home_dir=$(cd "$HOME" 2>/dev/null && pwd) || home_dir="$HOME"
-  local size=${#home_dir}
-  local path="$PWD"
+  local home_dir path
+  if [[ -n "$HOME" && "$HOME" == /* ]]; then
+    home_dir=$(cd -- "$HOME" 2>/dev/null && pwd) || home_dir=""
+  else
+    home_dir=""
+  fi
 
+  path="${PWD:-$(pwd -P 2>/dev/null)}"
   [[ -z "$path" ]] && return
 
   if [[ "$path" == "/" ]]; then
     echo "/"
     return
-  elif [[ "$path" == "$home_dir" ]]; then
+  elif [[ -n "$home_dir" && "$path" == "$home_dir" ]]; then
     echo "~"
     return
   fi
 
-  # Replace real home with ~
-  if [[ "$path" == "$home_dir/"* ]]; then
-    path="~${path:$size}"
+  if [[ -n "$home_dir" && "$path" == "$home_dir/"* ]]; then
+    path="~${path:${#home_dir}}"
   fi
 
-  # Split the path into elements
+  local leading_slash=""
+  if [[ "$path" == /* ]]; then
+    leading_slash="/"
+    path="${path#/}"
+  fi
+
   local IFS="/"
-  local elements=($path)
-  local length=${#elements[@]}
-  local start=0
+  local segments=()
+  read -ra segments <<< "$path"
+  local last_index=$(( ${#segments[@]} - 1 ))
+  local result="${leading_slash}"
 
-  # If the path starts with /, skip the first empty element
-  if [[ -z "${elements[0]}" ]]; then
-    start=1
-  fi
-
-  for ((i = start; i < length - 1; i++)); do
-    local elem="${elements[$i]}"
-    if [[ -n "$elem" ]]; then
-      if [[ "$elem" == .* ]]; then
-        # Hidden folders show the first 2 characters
-        elements[$i]="${elem:0:2}"
-      else
-        # Non-hidden folders show the first character
-        elements[$i]="${elem:0:1}"
+  for i in "${!segments[@]}"; do
+    local seg="${segments[i]}"
+    if (( i < last_index )); then
+      if [[ -n "$seg" ]]; then
+        if [[ "$seg" == .* ]]; then
+          result+="${seg:0:2}"
+        else
+          result+="${seg:0:1}"
+        fi
       fi
+      result+="/"
+    else
+      result+="$seg"
     fi
   done
 
-  # Reassemble the path
-  IFS="/"
-  echo "${elements[*]}"
+  echo "$result"
 }
 
 # Git Branch and Status Function
