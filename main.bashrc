@@ -306,15 +306,6 @@ __prompt_toggle_style() {
   else
     PROMPT_STYLE=1
   fi
-  # 重建 PS1
-  _build_prompt
-
-  # 让 readline 立即重绘当前行
-  if [[ -n "$READLINE_LINE" ]]; then
-    printf '\r\e[K'
-    READLINE_LINE="$READLINE_LINE"
-    READLINE_POINT=${READLINE_POINT:-${#READLINE_LINE}}
-  fi
 }
 
 _build_prompt() {

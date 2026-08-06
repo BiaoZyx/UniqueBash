@@ -31,6 +31,24 @@ UniqueBash 是一组面向通用 Linux 发行版的可扩展 Bash 配置集合�
   - `prompt.bashrc`：提示符样式与切换逻辑（TTY/Powerline）
   - `interactive.startup`：仅在交互式 shell 启动时加载的设置（快捷键绑定、history 行为等）。注意：快捷键绑定应仅放在交互 shell 的启动流程中，否则可能在脚本执行时导致警告或错误。
 
+  ## 快捷键速览
+  以下按键与设置在交互式 shell 中生效（详见 `bashrc.d/interactive.startup`）：
+
+  - `Ctrl-p`：切换提示符样式（Powerline ↔ ASCII），由 `__prompt_toggle_style` 处理。
+  - `Alt + ↑`：历史子串向后搜索（`history-substring-search-backward`）。
+  - `Alt + ↓`：历史子串向前搜索（`history-substring-search-forward`）。
+  - `Tab`：循环补全（`menu-complete`）。
+  - `Shift + Tab`：反向循环补全（`menu-complete-backward`）。
+  - 其他 readline 设置（影响补全与显示行为）：
+    - `skip-completed-text on`（避免重复文本）
+    - `colored-stats on`, `visible-stats on`（彩色与可见补全统计）
+    - `completion-ignore-case on`（补全忽略大小写）
+    - `show-all-if-ambiguous on`, `menu-complete-display-prefix on`
+    - `mark-symlinked-directories on`, `match-hidden-files off`
+    - `horizontal-scroll-mode on`（水平滚动，避免长命令换行）
+
+  说明：上述快捷键与设置仅在交互式 Shell 生效。若需查看或修改按键，请编辑 `bashrc.d/interactive.startup`。
+
 ## 可扩展性建议
 - 将个人改动放在 `bashrc.d` 中的新文件，避免直接修改仓库中的默认文件，便于通过版本控制合并上游更新。
 - 使用类似 `XX.local.bashrc` 的命名约定来保存机器/用户特定配置，加入 `.gitignore` 防止提交。

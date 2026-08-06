@@ -37,3 +37,21 @@ See the `LICENSE` file at the repository root.
 ---
 
 For the Chinese version, click the link at the top: [README.md](README.md)
+
+## Keybindings Quick Reference
+The following keybindings and readline settings are enabled for interactive shells (see `bashrc.d/interactive.startup`):
+
+- `Ctrl-p`: Toggle prompt style (Powerline ↔ ASCII) via `__prompt_toggle_style`.
+- `Alt + ↑`: History substring search backward (`history-substring-search-backward`).
+- `Alt + ↓`: History substring search forward (`history-substring-search-forward`).
+- `Tab`: Menu-based completion (`menu-complete`).
+- `Shift + Tab`: Menu completion backward (`menu-complete-backward`).
+- Additional readline/completion settings:
+  - `skip-completed-text on` — avoid duplicated text during completion
+  - `colored-stats on`, `visible-stats on` — show colored completion stats
+  - `completion-ignore-case on` — case-insensitive completion
+  - `show-all-if-ambiguous on`, `menu-complete-display-prefix on`
+  - `mark-symlinked-directories on`, `match-hidden-files off`
+  - `horizontal-scroll-mode on` — horizontal scroll for long commands
+
+Note: these keybindings and settings apply only to interactive shells. To view or modify them, edit `bashrc.d/interactive.startup`.
