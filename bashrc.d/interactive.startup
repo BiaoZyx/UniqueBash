@@ -10,11 +10,12 @@
 # Default 
 # --------------------
 
-# Shopts
+# --- Shopts ---
 shopt -s extglob    # 反向通配，如 rm -rf !(*.txt) 删除除 .txt 外的所有文件；ls *.!(sh|py) ：列出所有不是 .sh 或 .py 结尾的文件
 shopt -s autocd cdspell dirspell #checkwinsize  # 输入目录名进入，自动修正拼写错误的目录名，自动切换到目录，检查窗口大小变化
+# --------------
 
-# History Settings
+# --- History Settings ---
 shopt -s histappend
 HISTFILE="$HOME/.bash_history"
 HISTCONTROL=ignoreboth
@@ -25,6 +26,7 @@ HISTFILESIZE=10000
 #PROMPT_COMMAND='history -a; history -n; _build_prompt'
 PROMPT_COMMAND='_saved_ec=$?; _saved_ps=("${PIPESTATUS[@]}"); history -a; history -n; _build_prompt'
 bind -x '"\C-p": __prompt_toggle_style'
+# ------------------------
 
 # Custom cd function to pushd the directory onto the stack, use `dirs -v` to check the stack, and `popd` to return to the previous directory.
 cd() {
@@ -36,13 +38,13 @@ printf "Welcome to Bash, \033[0;32m%s\033[0m! \n" "$USER"
 
 
 
-# =========================
+# ---------------------------------
 #  _    _         _
 # | |__(_)_ _  __| |
 # | '_ \ | ' \/ _` |
 # |_.__/_|_||_\__,_|
 # (~/.bashrc.d/interactive.startup)
-# =========================
+# ---------------------------------
 
 # 绑定 Alt+↑ 进行子串搜索（向后搜索）
 bind '"\e[1;3A": history-substring-search-backward'

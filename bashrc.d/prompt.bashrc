@@ -14,3 +14,9 @@ else
     PROMPT_STYLE=1
 fi
 
+export SHOW_USER_HOST=0  # 1 to show user@host in prompt, 0 to hide
+
+# Flyline - enhanced Bash experience
+if [[ -f "$HOME/.local/lib/libflyline.so" ]]; then
+    enable -f "$HOME/.local/lib/libflyline.so" flyline
+fi

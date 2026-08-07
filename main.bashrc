@@ -7,8 +7,8 @@
 # \____/_/ /_/_/\__, /\__,_/\___/_____/\__,_/____/_/ /_/
 #                 /_/
 # =======================================================
-# Version      : 3.4
-# Updated-time : 2026-8-4
+# Version      : 3.5
+# Updated-time : 2026-8-7
 # Auther       : BiaoZyx
 # Email        : BiaoZyx@outlook.com
 # =======================================================
@@ -16,7 +16,7 @@
 # |  \/  |__ _(_)_ _
 # | |\/| / _` | | ' \
 # |_|  |_\__,_|_|_||_|
-#                (~/.bashrc)
+#              (~/.bashrc)
 # =======================================================
 
 # ------------------------------
@@ -273,7 +273,11 @@ _powerline_prompt() {
   fi
 
   # 构建 Powerline 分段
-  local s1="${BG_CYAN}${BB} \u@\h ${R}${dC1}${BG_BLUE}"
+  if [[ $SHOW_USER_HOST -eq 1 ]]; then
+    local s1="${BG_CYAN}${BB} \u@\h ${R}${dC1}${BG_BLUE}"
+  else
+    local s1=""
+  fi
   local s2="${BG_BLUE}${W1} $(_collapse) ${R}"
   local s3=""
   if [[ -n "$git" ]]; then
@@ -367,3 +371,5 @@ _build_prompt() {
       ;;
   esac
 }
+# Flyline - enhanced Bash experience
+enable -f /home/xue/.local/lib/libflyline.so flyline
