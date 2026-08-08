@@ -11,6 +11,24 @@ command_not_found_handle() {
     local cmd="$1"
     shift
 
+    # 如果是纯数字，尝试目录栈跳转
+    if [[ "$cmd" =~ ^[0-9]+$ ]]; then
+        if builtin pushd "+$cmd" >/dev/null 2>/dev/null; then
+            _build_prompt
+            return 0
+        else
+            local lang="${LANG:0:2}"
+            local errmsg
+            case "$lang" in
+                zh) errmsg="目录栈中没有编号 $cmd" ;;
+                es) errmsg="No hay directorio con índice $cmd en la pila" ;;
+                *)  errmsg="No directory with index $cmd in stack" ;;
+            esac
+            echo -e "\033[1;31m$errmsg\033[0m" >&2
+            return 1
+        fi
+    fi
+
     # 根据 LANG 选择语言（只取前两位，如 zh, en, es...）
     local lang="${LANG:0:2}"
     case "$lang" in

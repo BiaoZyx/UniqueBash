@@ -7,8 +7,8 @@
 # \____/_/ /_/_/\__, /\__,_/\___/_____/\__,_/____/_/ /_/
 #                 /_/
 # =======================================================
-# Version      : 3.5
-# Updated-time : 2026-8-7
+# Version      : 3.4
+# Updated-time : 2026-8-4
 # Auther       : BiaoZyx
 # Email        : BiaoZyx@outlook.com
 # =======================================================
@@ -372,4 +372,4 @@ _build_prompt() {
   esac
 }
 # Flyline - enhanced Bash experience
-enable -f /home/xue/.local/lib/libflyline.so flyline
+#enable -f /home/xue/.local/lib/libflyline.so flyline

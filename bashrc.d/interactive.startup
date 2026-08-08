@@ -11,8 +11,18 @@
 # --------------------
 
 # --- Shopts ---
-shopt -s extglob    # 反向通配，如 rm -rf !(*.txt) 删除除 .txt 外的所有文件；ls *.!(sh|py) ：列出所有不是 .sh 或 .py 结尾的文件
-shopt -s autocd cdspell dirspell #checkwinsize  # 输入目录名进入，自动修正拼写错误的目录名，自动切换到目录，检查窗口大小变化
+if type shopt >/dev/null 2>&1; then
+    if shopt -q pushd_ignore_dups 2>/dev/null; then
+        shopt -s pushd_ignore_dups  # 目录栈去重
+    fi
+    if shopt -q autopushd 2>/dev/null; then
+        shopt -s autopushd        # cd 自动将旧目录推入目录栈
+    fi
+    shopt -s extglob    # 反向通配，如 rm -rf !(*.txt) 删除除 .txt 外的所有文件；ls *.!(sh|py) ：显示非 .sh/.py 文件
+    if shopt -q autocd 2>/dev/null && shopt -q cdspell 2>/dev/null && shopt -q dirspell 2>/dev/null; then
+        shopt -s autocd cdspell dirspell #checkwinsize  # 输入目录名进入，自动修正拼写错误的目录名，自动切换到目录，检查窗口大小变化
+    fi
+fi
 # --------------
 
 # --- History Settings ---
@@ -28,9 +38,25 @@ PROMPT_COMMAND='_saved_ec=$?; _saved_ps=("${PIPESTATUS[@]}"); history -a; histor
 bind -x '"\C-p": __prompt_toggle_style'
 # ------------------------
 
-# Custom cd function to pushd the directory onto the stack, use `dirs -v` to check the stack, and `popd` to return to the previous directory.
+# Custom cd function to support numeric directory-stack navigation with pushd,
+# while preserving normal cd behavior for regular paths.
 cd() {
-builtin cd "$@" && pushd . >/dev/null
+    if [[ $# -eq 1 && "$1" =~ ^[+-][0-9]+$ ]]; then
+        builtin pushd "$1" >/dev/null 2>&1
+        return
+    fi
+
+    local oldpwd="$PWD"
+    if builtin cd "$@"; then
+        local newpwd="$PWD"
+        if [[ "$oldpwd" != "$newpwd" ]]; then
+            if ! (type shopt >/dev/null 2>&1 && shopt -q autopushd >/dev/null 2>&1); then
+                builtin pushd -n "$oldpwd" >/dev/null 2>&1 || true
+            fi
+        fi
+        return 0
+    fi
+    return 1
 }
 
 # Welcome message

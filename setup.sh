@@ -140,7 +140,7 @@ if [[ -d "$SCRIPT_DIR/bashrc.d" ]]; then
     # 交互选择安装哪些模块
     mkdir -p "$HOME/.bashrc.d"
 
-    mapfile -t MODULES < <(ls -1 "$SCRIPT_DIR/bashrc.d"/*.bashrc 2>/dev/null || true)
+    mapfile -t MODULES < <(ls -1 "$SCRIPT_DIR/bashrc.d"/* 2>/dev/null || true)
     if [[ ${#MODULES[@]} -eq 0 ]]; then
         print_warn "bashrc.d 目录为空，跳过模块安装。"
     else
