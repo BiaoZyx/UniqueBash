@@ -42,7 +42,7 @@ Default behavior:
 
 > **Updating (keeps your edits)**: `--update` uses a 3-way diff-merge (your version / base version / upstream version). The rules:
 > - **Repo added a new file**: installed into your `~/.bashrc.d/`; your existing files are untouched.
-> - **You didn't edit a file, but the repo did**: updated directly to the upstream version.
+> - **You didn't edit a file, but the repo did**: updated directly to the upstream version (detected when your file contains no lines absent from upstream — i.e. it is a subset of upstream, which also covers "you had an older version and the repo evolved").
 > - **You and the repo edited different parts of the same file**: `git merge-file` merges automatically — **your edits are kept and the repo's additions are also applied**.
 > - **You and the repo edited the same line (real conflict)**: your working version is kept (so the shell keeps working), and the conflicting merge result with `<<<<<<<` markers is written to `~/.bashrc.d/.merged_<file>` for you to resolve manually; your previous version is backed up to `~/.bashrc.d/.backups/`.
 > - **`*.local.*` files**: always skipped — no merge happens at all (they are your fully private config).

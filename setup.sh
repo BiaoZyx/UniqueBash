@@ -128,6 +128,14 @@ merge_module() {
 
     mkdir -p "$base_dir" "$backup_dir"
 
+    # 强制模式：直接覆盖为上游（不保留差异）
+    if [[ $FORCE -eq 1 ]]; then
+        cp "$upstream" "$user_file"
+        cp "$upstream" "$base_file"
+        print_success "已强制更新 $name"
+        return 0
+    fi
+
     # 新模块：直接安装
     if [[ ! -f "$user_file" ]]; then
         cp "$upstream" "$user_file"
@@ -143,19 +151,26 @@ merge_module() {
         return 0
     fi
 
-    # 首次跟踪：以当前上游作为基线
-    if [[ ! -f "$base_file" ]]; then
-        cp "$upstream" "$base_file"
-    fi
-
-    # 用户未修改（与基线相同）：直接更新
-    if diff -q "$user_file" "$base_file" >/dev/null 2>&1; then
+    # 未改过检测（每次都做，不限于首次）：用户文件是上游的一个子集
+    # （用户没有任何“上游所无的独有行”）-> 用户没有个人改动 -> 直接采用上游，应用全部新增。
+    # 注：仓库自身演进导致的旧版差异，同样会被此判定覆盖为“应用上游”，符合“用户没改就更新”的预期。
+    if [[ -z "$(comm -23 <(sort "$user_file") <(sort "$upstream") 2>/dev/null)" ]]; then
         cp "$upstream" "$user_file"
         cp "$upstream" "$base_file"
-        print_success "已更新 $name"
+        print_success "已更新 $name（应用仓库新增）"
         return 0
     fi
 
+    # 以下为用户确有个人改动（含上游所无的独有行）的场景。
+    # 三方合并要“既保留用户修改、又合入上游新增”，理论上需“上次安装时的上游版本”作基线；
+    # 但本系统上线前用户已装过旧版，并无旧上游可参照，故做如下近似：
+    if [[ ! -f "$base_file" ]]; then
+        # 以“当前上游”作为基线，优先保留其修改。
+        # 本次修改不会丢；但上游新增可能暂不生效，下次更新起即可正常融合。
+        cp "$upstream" "$base_file"
+    fi
+
+    # 三方合并（base=基线, ours=当前用户版, theirs=上游新版）：有 git 自动融合，无 git 备份后覆盖
     # 用户有修改：尝试三方合并
     if ! command -v git >/dev/null 2>&1; then
         # 无 git：退化为“备份后覆盖”，旧版保留在 .backups 供手动恢复
