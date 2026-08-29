@@ -1,0 +1,13 @@
+# UniqueBash shellcheck configuration
+# Run: shellcheck setup.sh main.bashrc bashrc.d/*.bashrc bashrc.d/interactive.startup
+
+# SC1090/SC1091: we source files via dynamic globs; can't statically resolve them
+disable=SC1090,SC1091
+# SC2016: literal '${...}' inside PS1 strings is intentional (expanded by bash, not shellcheck)
+disable=SC2016
+# SC2154: _saved_ec / _saved_ps are assigned by PROMPT_COMMAND before use
+disable=SC2154
+# SC2164: `cd` targets are controlled; missing-dir abort is acceptable
+disable=SC2164
+# SC2086: intentional word-splitting in a few controlled spots (e.g. $ab_line tokens)
+disable=SC2086

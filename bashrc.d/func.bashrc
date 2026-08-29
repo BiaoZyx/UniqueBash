@@ -33,7 +33,7 @@ command_not_found_handle() {
     local lang="${LANG:0:2}"
     case "$lang" in
         zh)
-            # 中文提示（ASCII 符号，无 Emoji）
+            # 中文提示
             local guess_msg="[?] 你是不是想输入 '%s'？"
             local insults=(
                 "[!] '%s'？这玩意儿不存在。"
@@ -70,8 +70,9 @@ command_not_found_handle() {
             ;;
     esac
 
-    # 猜测命令
-    local guess=$(history | awk '{print $2}' | grep -E "^.{0,2}${cmd}.{0,2}$" | tail -1)
+    # 猜测命令（基于可用命令名，避免扫描整个历史带来的开销）
+    local guess
+    guess=$(compgen -c 2>/dev/null | grep -E "^.{0,2}${cmd}.{0,2}$" | head -1)
     if [[ -n "$guess" && "$guess" != "$cmd" ]]; then
         printf "\033[1;33m${guess_msg}\033[0m\n" "$guess"
     else
@@ -88,4 +89,49 @@ mkcd() {    # 创建目录并进入该目录
     return 1
   fi
   mkdir -p "$1" && cd "$1"
+}
+
+# ---------- UniqueBash 更新与状态工具 ----------
+# 依赖 setup.sh 在安装/更新时写入的 ~/.bashrc.d/.repo_root
+ub-update() {
+    local root
+    root=$(cat "$HOME/.bashrc.d/.repo_root" 2>/dev/null)
+    if [[ -z "$root" || ! -f "$root/setup.sh" ]]; then
+        echo "无法确定 UniqueBash 仓库路径，请重新运行 ./setup.sh" >&2
+        return 1
+    fi
+    bash "$root/setup.sh" --update
+}
+
+ub-status() {
+    local d="$HOME/.bashrc.d"
+    echo "UniqueBash 已加载模块数: $(ls -1 "$d"/*.bashrc 2>/dev/null | wc -l)"
+    if [[ -f "$d/.last_update" ]]; then
+        echo "最后更新: $(cat "$d/.last_update")"
+    else
+        echo "最后更新: 从未"
+    fi
+    if ls "$d"/.conflict_* >/dev/null 2>&1; then
+        echo "存在合并冲突，请处理:"
+        ls "$d"/.conflict_*
+    fi
+}
+
+ub-diff() {
+    local d="$HOME/.bashrc.d"
+    local root
+    root=$(cat "$d/.repo_root" 2>/dev/null)
+    [[ -z "$root" ]] && { echo "无法确定仓库路径，请先运行 ./setup.sh" >&2; return 1; }
+    for f in "$d"/*.bashrc "$d"/interactive.startup; do
+        [[ -f "$f" ]] || continue
+        local name
+        name=$(basename "$f")
+        [[ "$name" == *.local.* ]] && continue
+        if diff -q "$f" "$root/bashrc.d/$name" >/dev/null 2>&1; then
+            echo "[=] $name"
+        else
+            echo "[*] $name 有差异:"
+            diff -u "$root/bashrc.d/$name" "$f" | sed -n '1,30p'
+        fi
+    done
 }

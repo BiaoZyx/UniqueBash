@@ -7,7 +7,7 @@
 # =============================================
 
 # --------------------
-# Default 
+# Default
 # --------------------
 
 # --- Shopts ---
@@ -33,8 +33,17 @@ HISTIGNORE='&:[ ]*'
 HISTSIZE=10000
 HISTFILESIZE=10000
 
-#PROMPT_COMMAND='history -a; history -n; _build_prompt'
-PROMPT_COMMAND='_saved_ec=$?; _saved_ps=("${PIPESTATUS[@]}"); history -a; history -n; _build_prompt'
+# Capture $? and PIPESTATUS as arguments BEFORE any assignment clobbers them,
+# then build the prompt. (A plain `_saved_ec=$?; _saved_ps=("${PIPESTATUS[@]}")`
+# would reset PIPESTATUS on the first assignment, losing the pipeline status.)
+__prompt_pre() {
+    _saved_ec=$1
+    _saved_ps=("${@:2}")
+    history -a
+    history -n
+    _build_prompt
+}
+PROMPT_COMMAND='__prompt_pre "$?" "${PIPESTATUS[@]}"'
 bind -x '"\C-p": __prompt_toggle_style'
 # ------------------------
 
@@ -50,7 +59,7 @@ cd() {
     if builtin cd "$@"; then
         local newpwd="$PWD"
         if [[ "$oldpwd" != "$newpwd" ]]; then
-            if ! (type shopt >/dev/null 2>&1 && shopt -q autopushd >/dev/null 2>&1); then
+            if ! shopt -q autopushd 2>/dev/null; then
                 builtin pushd -n "$oldpwd" >/dev/null 2>&1 || true
             fi
         fi
@@ -80,30 +89,22 @@ bind '"\e[1;3B": history-substring-search-forward'
 # --------------------
 # Tab 补全优化
 # --------------------
-# 1. Tab 补全优化
 bind 'TAB:menu-complete'
 bind '"\e[Z": menu-complete-backward'   # Shift+Tab 反向轮询
-# 关键优化：跳过已输入的重叠文本（避免出现 "foo/foo/" 这种冗余）
+
+# 跳过已输入的重叠文本（避免出现 "foo/foo/" 这种冗余）
 bind 'set skip-completed-text on'
-# 给补全列表着色并显示类型标识（目录带 /，可执行文件带 *）
+# 补全列表着色并显示类型标识（目录带 /，可执行文件带 *）
 bind 'set colored-stats on'
 bind 'set visible-stats on'
-
-# 补全时不区分大小写（输入 ream 能匹配 ReadMe）
+# 补全不区分大小写（输入 ream 能匹配 ReadMe）
 bind 'set completion-ignore-case on'
-
-# 2. 显示选项与智能补全
+# 显示全部候选并保留已输入前缀
 bind 'set show-all-if-ambiguous on'
 bind 'set menu-complete-display-prefix on'
-
-# 3. 不区分大小写
-bind 'set completion-ignore-case on'
-
-# 4. (可选) 为目录符号链接自动添加斜杠
+# 目录符号链接自动添加斜杠
 bind 'set mark-symlinked-directories on'
-
-# 5. (可选) 不自动补全隐藏文件，除非输入了 "."
+# 不自动补全隐藏文件，除非输入了 "."
 bind 'set match-hidden-files off'
-
-
-bind 'set horizontal-scroll-mode on'    # 水平滚动模式（避免长命令换行）
+# 水平滚动模式（避免长命令换行）
+#bind 'set horizontal-scroll-mode on'

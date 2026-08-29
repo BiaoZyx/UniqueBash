@@ -14,7 +14,13 @@ if command -v eza &> /dev/null; then
     alias l='ls -lA'  # Default `l`
 else
     # GNU/Linux: --color=auto, macOS/BSD: -G
-    alias ls='ls --color=auto 2>/dev/null || ls -G'
+    if ls --color=auto >/dev/null 2>&1; then
+        alias ls='ls --color=auto'
+    elif ls --color >/dev/null 2>&1; then
+        alias ls='ls --color'
+    else
+        alias ls='ls -G'
+    fi
     alias l='ls -lAh' # Default `l`
 fi
 
