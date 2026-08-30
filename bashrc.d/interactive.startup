@@ -85,6 +85,8 @@ printf "Welcome to Bash, \033[0;32m%s\033[0m! \n" "$USER"
 bind '"\e[1;3A": history-substring-search-backward'
 # 绑定 Alt+↓ 进行子串搜索（向前搜索）
 bind '"\e[1;3B": history-substring-search-forward'
+# 绑定 Alt+Enter 插入字面换行符（行编辑方便）
+bind '"\e\r": "\C-v\C-j"'
 
 # --------------------
 # Tab 补全优化
