@@ -21,26 +21,63 @@ This project evolved from the author's personal Bash setup used on development b
 ```sh
 ./setup.sh
 ```
-> Note: existing `~/.bashrc` and `~/.bash_profile` are backed up automatically.
+> Note: existing `~/.bashrc` and `~/.bash_profile` are backed up automatically; the default is a **full install with no questions** (use `--tui` / `--select` / `--modules` to pick modules).
 
 ## Install Options
+
+`setup.sh` uses a **subcommand** structure (the default subcommand is `install`). Legacy flags (`--update` / `--uninstall` / `--preview` / `--tui` / `--yes` / `--force` / `--help` / `--version`) are still accepted as aliases.
+
 ```sh
-./setup.sh                 # normal install (auto backup)
-./setup.sh --force         # overwrite without backup
-./setup.sh --preview       # show what would change, write nothing
-./setup.sh --tui           # pick modules with a TUI (dialog / fzf)
-./setup.sh --update        # refresh ~/.bashrc.d from repo defaults (backup, skip *.local.*)
-./setup.sh --uninstall     # restore from backups and remove default modules
-./setup.sh --help          # show help
-./setup.sh --version       # show version
+./setup.sh [subcommand] [options]
+
+Subcommands:
+  install        back up + symlink ~/.bashrc and ~/.bash_profile, install modules (default)
+  update         repair symlinks, 3-way merge modules (skip *.local.*)
+  uninstall      restore ~/.bashrc / ~/.bash_profile from backups, remove default modules
+  status         show install state, symlink targets, module drift, pending conflicts
+  preview [act]  dry-run any action (install/update/uninstall), write nothing
+  help / version help / version
+
+Options:
+  --yes, --auto          non-interactive (default is already a full install)
+  --tui                  pick modules with a TUI (dialog / fzf)
+  --select               pick modules with numbered prompts
+  --modules=a,b,c        pick modules by name, non-interactively
+  --no-backup            do not back up ~/.bashrc / ~/.bash_profile
+  --overwrite-modules    overwrite your edited modules with the repo version
+  --force                legacy alias = --no-backup + --overwrite-modules
+  --lang=zh|en           UI language (default follows your locale; fully bilingual)
+  --preview              dry-run the current action (write nothing)
+```
+
+Exit codes:
+
+| Code | Meaning |
+| --- | --- |
+| 0 | success |
+| 1 | fatal error (I/O, git failure, …) |
+| 2 | usage error (unknown subcommand/option) |
+| 3 | preflight failure (missing `main.bashrc`, sourced instead of run, …) |
+| 4 | finished with merge conflicts (install/update) |
+| — | `status` subcommand: 0 OK / 1 problems (broken symlink, pending conflicts) |
+
+```sh
+./setup.sh                      # full install, no questions, auto backup
+./setup.sh --select             # pick modules by number
+./setup.sh update               # everyday update
+./setup.sh preview update       # dry-run an update
+./setup.sh status               # show install status
+./setup.sh uninstall --yes      # non-interactive uninstall
+./setup.sh --lang=zh help       # Chinese help
 ```
 
 Default behavior:
-1. Back up `~/.bashrc` to `~/.bashrc.bak.<timestamp>` and symlink it to this repo's `main.bashrc`.
+1. Back up `~/.bashrc` to `~/.bashrc.bak.<timestamp>` and symlink it to this repo's `main.bashrc` (no repeated backup when the symlink is already correct).
 2. Back up `~/.bash_profile` to `~/.bash_profile.bak.<timestamp>` and symlink it to `startup.bash_profile`.
 3. Copy `bashrc.d/*` into `~/.bashrc.d/` (existing files are backed up first).
+4. Write the state file `~/.bashrc.d/.install_state` (version, time, repo commit, installed modules, last action, pending conflicts) for `status` and `ub-status`; the legacy `.repo_root` / `.last_update` are still written so `ub-*` keeps working.
 
-> **Updating (keeps your edits)**: `--update` uses a 3-way diff-merge (your version / base version / upstream version). The rules:
+> **Updating (keeps your edits)**: the `update` subcommand (or `--update`) uses a 3-way diff-merge (your version / base version / upstream version). The rules:
 > - **Repo added a new file**: installed into your `~/.bashrc.d/`; your existing files are untouched.
 > - **You didn't edit a file, but the repo did**: updated directly to the upstream version (detected when your file contains no lines absent from upstream — i.e. it is a subset of upstream, which also covers "you had an older version and the repo evolved").
 > - **You and the repo edited different parts of the same file**: `git merge-file` merges automatically — **your edits are kept and the repo's additions are also applied**.
@@ -48,13 +85,15 @@ Default behavior:
 > - **`*.local.*` files**: always skipped — no merge happens at all (they are your fully private config).
 >
 > Your version is backed up to `~/.bashrc.d/.backups/` before merging. Day-to-day updates can simply use `ub-update` (see below).
-> **Uninstalling**: `--uninstall` restores `~/.bashrc` / `~/.bash_profile` from the install-time backups and removes the default modules installed by this project (restoring your edited version if you had one), keeping `*.local.*` files.
+> **Uninstalling**: the `uninstall` subcommand (or `--uninstall`) restores `~/.bashrc` / `~/.bash_profile` from the install-time backups and removes the default modules installed by this project (restoring your edited version if you had one), keeping `*.local.*` files.
+> **Previewing**: any action can be rehearsed first with `preview` (e.g. `./setup.sh preview update`); the preview runs through the exact same code path as the real action and never writes to disk.
 
 ## Update Tools (in interactive shells)
 After installing/updating, `func.bashrc` provides:
-- `ub-update` — same as `./setup.sh --update` (auto-locates the repo).
-- `ub-status` — show loaded module count, last update time, and any merge conflicts.
+- `ub-update` — same as `./setup.sh update` (auto-locates the repo).
+- `ub-status` — module count, installed version / last action / repo commit (from `.install_state`), last update time, merge conflicts, and a pointer to the detailed status command.
 - `ub-diff` — show per-file diffs between your `~/.bashrc.d/` and the upstream repo.
+- For a full check (symlinks pointing at this repo, module drift, pending conflicts) run `./setup.sh status` (exit code 1 when problems exist, so it is scriptable).
 
 ## Repository Structure
 - `main.bashrc`: main entry (the loader for `~/.bashrc`); it loads `interactive.startup` and the `bashrc.d` modules. **The prompt implementation (colors, Git parsing, rendering) has been moved into `bashrc.d/prompt.bashrc`** for easier maintenance.
@@ -87,7 +126,7 @@ Note: these keybindings and settings apply only to interactive shells. To view o
 ## Extensibility Tips
 - Put personal changes in new files inside `bashrc.d` to avoid modifying defaults and simplify upstream updates.
 - Use a naming convention like `XX.local.bashrc` for machine/user-specific configuration and add them to `.gitignore`.
-- To upgrade default modules run `./setup.sh --update`; to fully remove run `./setup.sh --uninstall`.
+- To upgrade default modules run `./setup.sh update`; to fully remove run `./setup.sh uninstall`.
 
 ## Development & Linting
 - A `.shellcheckrc` is provided at the repo root. Run:

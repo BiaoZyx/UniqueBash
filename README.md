@@ -21,26 +21,63 @@ UniqueBash 是一组面向通用 Linux 发行版的可扩展 Bash 配置集合�
 ```sh
 ./setup.sh
 ```
-> 注：会自动备份已有的 `~/.bashrc` 与 `~/.bash_profile`。
+> 注：会自动备份已有的 `~/.bashrc` 与 `~/.bash_profile`；默认**全量安装、零提问**（需要挑选模块时用 `--tui` / `--select` / `--modules`）。
 
 ## 安装选项
+
+`setup.sh` 采用**子命令**结构（缺省子命令为 `install`）；旧标志（`--update` / `--uninstall` / `--preview` / `--tui` / `--yes` / `--force` / `--help` / `--version`）全部保留为兼容别名。
+
 ```sh
-./setup.sh                 # 正常安装（自动备份）
-./setup.sh --force         # 强制覆盖，不备份
-./setup.sh --preview       # 仅预览将要执行的操作，不写盘
-./setup.sh --tui           # 使用 TUI（dialog / fzf）选择模块
-./setup.sh --update        # 智能差异融合更新 ~/.bashrc.d（3-way merge，保留你的修改，跳过 *.local.*）
-./setup.sh --uninstall     # 依据备份恢复 ~/.bashrc / ~/.bash_profile 并移除默认模块
-./setup.sh --help          # 显示帮助
-./setup.sh --version       # 显示版本号
+./setup.sh [子命令] [选项]
+
+子命令:
+  install        安装：备份并软链 ~/.bashrc、~/.bash_profile，安装模块（缺省）
+  update         更新：修复软链，三方融合升级模块（跳过 *.local.*）
+  uninstall      卸载：按备份恢复 ~/.bashrc、~/.bash_profile，移除默认模块
+  status         查看安装状态、软链指向、模块差异与待处理冲突
+  preview [动作] 预演任意动作（install/update/uninstall），不写盘
+  help / version 帮助 / 版本
+
+选项:
+  --yes, --auto          非交互（缺省即全装）
+  --tui                  用 TUI（dialog / fzf）选择模块
+  --select               用编号交互选择模块
+  --modules=a,b,c        按模块名非交互选择
+  --no-backup            不备份 ~/.bashrc / ~/.bash_profile
+  --overwrite-modules    更新时直接以仓库版本覆盖你的模块修改
+  --force                兼容别名 = --no-backup + --overwrite-modules
+  --lang=zh|en           界面语言（缺省跟随系统 locale，全部消息中英双语）
+  --preview              对当前动作做 dry-run（不写盘）
+```
+
+退出码：
+
+| 码 | 含义 |
+| --- | --- |
+| 0 | 成功 |
+| 1 | 致命错误（I/O、git 失败等） |
+| 2 | 用法错误（未知子命令/选项） |
+| 3 | 前置检查失败（缺 `main.bashrc`、被 source 运行等） |
+| 4 | 动作完成但存在合并冲突（install/update） |
+| — | `status` 子命令：0 正常 / 1 发现问题（软链损坏、待处理冲突） |
+
+```sh
+./setup.sh                      # 全量安装（零提问，自动备份）
+./setup.sh --select             # 编号选择模块
+./setup.sh update               # 日常更新
+./setup.sh preview update       # 预演更新，不写盘
+./setup.sh status               # 查看安装状态
+./setup.sh uninstall --yes      # 非交互卸载
+./setup.sh --lang=en help       # 英文帮助
 ```
 
 默认行为：
-1. 备份现有 `~/.bashrc` 到 `~/.bashrc.bak.<timestamp>`，并软链到本仓库的 `main.bashrc`。
+1. 备份现有 `~/.bashrc` 到 `~/.bashrc.bak.<timestamp>`，并软链到本仓库的 `main.bashrc`（已正确链接时不重复备份）。
 2. 备份现有 `~/.bash_profile` 到 `~/.bash_profile.bak.<timestamp>`，并软链到 `startup.bash_profile`。
 3. 复制 `bashrc.d/*` 到 `~/.bashrc.d/`（已存在的文件会先打备份）。
+4. 写入状态文件 `~/.bashrc.d/.install_state`（版本、时间、仓库 commit、已装模块、上次动作、待处理冲突），供 `status` 与 `ub-status` 读取；旧的 `.repo_root` / `.last_update` 仍然写入，`ub-*` 工具可继续使用。
 
-> **更新（保留个人修改）**：`--update` 采用三方差异融合（用户版本 / 基础版本 / 上游版本）。规则如下：
+> **更新（保留个人修改）**：`update` 子命令（或 `--update`）采用三方差异融合（用户版本 / 基础版本 / 上游版本）。规则如下：
 > - **仓库新增了文件**：直接安装到你 `~/.bashrc.d/`，不影响你已有文件。
 > - **你没改过某文件，但仓库改了**：直接更新为上游新版（判定依据：你的文件不含任何“上游所没有的独有行”，即它是上游的一个子集——这也覆盖了“你装的是旧版本、仓库后来演进过”的情况）。
 > - **你和仓库改了同一文件的不同位置**：`git merge-file` 自动合并——**你的修改被保留，仓库的新增也一并合入**。
@@ -48,13 +85,15 @@ UniqueBash 是一组面向通用 Linux 发行版的可扩展 Bash 配置集合�
 > - **`*.local.*` 文件**：永远跳过，连合并都不会发生（属于你完全私有的配置）。
 >
 > 合并前会自动备份你的版本到 `~/.bashrc.d/.backups/`。日常更新可直接用 `ub-update`（见下方工具）。
-> **卸载**：`--uninstall` 会用安装时生成的备份还原 `~/.bashrc` / `~/.bash_profile`，并移除由本仓库安装的默认模块（若你改过，则还原为你的修改版本），保留 `*.local.*` 文件。
+> **卸载**：`uninstall` 子命令（或 `--uninstall`）会用安装时生成的备份还原 `~/.bashrc` / `~/.bash_profile`，并移除由本仓库安装的默认模块（若你改过，则还原为你的修改版本），保留 `*.local.*` 文件。
+> **预览**：任意动作都可以先加 `preview` 演练（如 `./setup.sh preview update`），预览与真实执行走同一条代码路径，绝不写盘。
 
 ## 更新工具（交互式 Shell 中可用）
 安装/更新后，`func.bashrc` 提供以下命令：
-- `ub-update`：等价于 `./setup.sh --update`（自动定位仓库路径）。
-- `ub-status`：显示已加载模块数、最后更新时间、是否存在合并冲突。
+- `ub-update`：等价于 `./setup.sh update`（自动定位仓库路径）。
+- `ub-status`：显示已加载模块数、安装版本/上次动作/仓库提交（读 `.install_state`）、最后更新时间、合并冲突与详细状态命令提示。
 - `ub-diff`：逐文件对比 `~/.bashrc.d/` 与仓库上游的差异。
+- 需要更完整的检查（软链是否指向本仓库、模块差异、待处理冲突）时，运行 `./setup.sh status`（有问题时退出码为 1，可脚本化）。
 
 ## 结构说明
 - `main.bashrc`：主入口（等同于 `~/.bashrc` 的加载器），负责加载 `interactive.startup` 与 `bashrc.d` 中的模块。**提示符的具体实现（颜色、Git 解析、渲染）已迁移到 `bashrc.d/prompt.bashrc`**，便于维护。
@@ -85,7 +124,7 @@ UniqueBash 是一组面向通用 Linux 发行版的可扩展 Bash 配置集合�
 ## 可扩展性建议
 - 将个人改动放在 `bashrc.d` 中的新文件，避免直接修改仓库默认文件，便于通过版本控制合并上游更新。
 - 使用 `XX.local.bashrc` 这类命名保存机器/用户特定配置，并加入 `.gitignore` 防止提交。
-- 升级默认模块运行 `./setup.sh --update`；完全移除运行 `./setup.sh --uninstall`。
+- 升级默认模块运行 `./setup.sh update`；完全移除运行 `./setup.sh uninstall`。
 
 ## 开发与质量检查
 - 仓库根目录提供了 `.shellcheckrc`，可运行以下命令执行静态检查：

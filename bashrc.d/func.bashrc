@@ -92,7 +92,7 @@ mkcd() {    # 创建目录并进入该目录
 }
 
 # ---------- UniqueBash 更新与状态工具 ----------
-# 依赖 setup.sh 在安装/更新时写入的 ~/.bashrc.d/.repo_root
+# 依赖 setup.sh 在安装/更新时写入的 ~/.bashrc.d/.repo_root 与 .install_state
 ub-update() {
     local root
     root=$(cat "$HOME/.bashrc.d/.repo_root" 2>/dev/null)
@@ -100,12 +100,23 @@ ub-update() {
         echo "无法确定 UniqueBash 仓库路径，请重新运行 ./setup.sh" >&2
         return 1
     fi
-    bash "$root/setup.sh" --update
+    bash "$root/setup.sh" update
 }
 
 ub-status() {
     local d="$HOME/.bashrc.d"
+    local root line
     echo "UniqueBash 已加载模块数: $(ls -1 "$d"/*.bashrc 2>/dev/null | wc -l)"
+    # 状态文件（setup.sh >= 3.4 写入）
+    if [[ -f "$d/.install_state" ]]; then
+        while IFS= read -r line; do
+            case "$line" in
+                version=*)     echo "安装版本: ${line#version=}" ;;
+                last_action=*) echo "上次动作: ${line#last_action=}" ;;
+                commit=*)      echo "仓库提交: ${line#commit=}" ;;
+            esac
+        done < "$d/.install_state"
+    fi
     if [[ -f "$d/.last_update" ]]; then
         echo "最后更新: $(cat "$d/.last_update")"
     else
@@ -114,6 +125,11 @@ ub-status() {
     if ls "$d"/.conflict_* >/dev/null 2>&1; then
         echo "存在合并冲突，请处理:"
         ls "$d"/.conflict_*
+    fi
+    # 详细状态（软链指向 / 模块差异 / 退出码）
+    root=$(cat "$d/.repo_root" 2>/dev/null)
+    if [[ -n "$root" && -f "$root/setup.sh" ]]; then
+        echo "详细状态: bash $root/setup.sh status"
     fi
 }
 
